@@ -1,4 +1,4 @@
-module type Class = sig
+module type CLASS = sig
   type t
 
   val equal: t -> t -> bool
@@ -7,31 +7,32 @@ module type Class = sig
 end
 
 module type S = sig
-  module Elt : HashTable.HashedType
-  module Class : Class
+  type elt
+  type repr
   type t
-  type factory = Elt.t -> Class.t
+  type factory = elt -> repr
   val create: ?size:int -> unit -> t
-  val find: ?default:factory -> Elt.t -> t -> Class.t
-  val find_opt: ?default:factory -> Elt.t -> t -> Class.t option
-  val union: ?default:factory -> ?hook:(Class.t -> Class.t -> unit) -> Elt.t -> Elt.t -> t -> t
+  val find: ?default:factory -> elt -> t -> repr
+  val find_opt: ?default:factory -> elt -> t -> repr option
+  val union: ?default:factory -> ?hook:(repr -> repr -> unit) -> elt -> elt -> t -> t
 end
 
-module Make (E: HashTable.HashedType) (C: Class) = struct
-  module Elt = E
-  module Class = C
+module Make (Elt: HashTable.HashedType) (Class: CLASS) = struct
+  type elt = Elt.t
+	type repr = Class.t
+
   module HashTable = HashTable.Make (Elt)
 
   module Node = struct
     type t = {
-      elt: Elt.t;
+      elt: elt;
       rank: int;
       parent: parent
     }
 
     and parent =
-      | Parent of Elt.t
-      | Root of Class.t
+      | Parent of elt
+      | Root of repr
 
     let create e k = {
       elt = e;
@@ -52,7 +53,7 @@ module Make (E: HashTable.HashedType) (C: Class) = struct
     }
   end
 
-  type factory = Elt.t -> Class.t
+  type factory = elt -> repr
 
   type t = {
     mutable table: Node.t HashTable.t

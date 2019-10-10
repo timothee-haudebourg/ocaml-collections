@@ -7,28 +7,28 @@ module type HashedType = sig
 end
 
 module type S = sig
-  module Key : HashedType
+  type key
   type 'a t
   val create : int -> 'a t
-  val set : Key.t -> 'a -> 'a t -> 'a t
+  val set : key -> 'a -> 'a t -> 'a t
   val size : 'a t -> int
   val is_empty : 'a t -> bool
-  val find : Key.t -> 'a t -> 'a
-  val find_opt : Key.t -> 'a t -> 'a option
+  val find : key -> 'a t -> 'a
+  val find_opt : key -> 'a t -> 'a option
   val resize : int -> 'a t -> 'a t
-  val fold : ('b -> Key.t -> 'a -> 'b) -> 'b -> 'a t -> 'b
-  val iter : (Key.t -> 'a -> unit) -> 'a t -> unit
-  val map : (Key.t -> 'a -> 'b) -> 'a t -> 'b t
-  val union : (Key.t -> 'a -> 'a -> 'a option) -> 'a t -> 'a t -> 'a t
+  val fold : ('b -> key -> 'a -> 'b) -> 'b -> 'a t -> 'b
+  val iter : (key -> 'a -> unit) -> 'a t -> unit
+  val map : (key -> 'a -> 'b) -> 'a t -> 'b t
+  val union : (key -> 'a -> 'a -> 'a option) -> 'a t -> 'a t -> 'a t
 end
 
 module Make (K: HashedType) = struct
-  module Key = K
+	type key = K.t
 
   type 'a bucket =
     | Empty
     | Cons of {
-        key: Key.t;
+        key: key;
         data: 'a;
         next: 'a bucket
       }
@@ -42,7 +42,7 @@ module Make (K: HashedType) = struct
     | HashTable of 'a hashtable
     | Diff of {
         mutable size: int option;
-        key: Key.t;
+        key: key;
         data: 'a option;
         source: 'a t
       }
@@ -55,7 +55,7 @@ module Make (K: HashedType) = struct
     })
 
   let key_bucket key ht =
-    (Key.hash key) mod (Array.length ht.data)
+    (K.hash key) mod (Array.length ht.data)
 
   (* insert the value in the bucket and return the nex bucket with the old value. *)
   let rec bucket_replace_value key value = function
@@ -64,14 +64,14 @@ module Make (K: HashedType) = struct
         data = value;
         next = Empty
       }, None
-    | Cons bucket when Key.equal key bucket.key ->
+    | Cons bucket when K.equal key bucket.key ->
       Cons { bucket with data = value }, Some bucket.data
     | Cons bucket ->
       let next, old_value = bucket_replace_value key value bucket.next in
       Cons { bucket with next = next }, old_value
 
   (* used in fold *)
-  module KeyHashtbl = Hashtbl.Make (Key)
+  module KHashtbl = Hashtbl.Make (K)
 
   let fold f x t =
     let rec aux table x t =
@@ -83,10 +83,10 @@ module Make (K: HashedType) = struct
             let x = match table with
               | Some table ->
                 begin
-                  match KeyHashtbl.find_opt table bucket.key with
+                  match KHashtbl.find_opt table bucket.key with
                   | Some () -> x
                   | None ->
-                    KeyHashtbl.add table bucket.key ();
+                    KHashtbl.add table bucket.key ();
                     f x bucket.key bucket.data
                 end
               | None -> f x bucket.key bucket.data
@@ -97,7 +97,7 @@ module Make (K: HashedType) = struct
       | Diff { key = key; data = None; source = src; _ } ->
         begin
           match table with
-          | Some table -> KeyHashtbl.add table key ();
+          | Some table -> KHashtbl.add table key ();
           | None -> ()
         end;
         aux table x src
@@ -105,10 +105,10 @@ module Make (K: HashedType) = struct
         let x = match table with
           | Some table ->
             begin
-              match KeyHashtbl.find_opt table key with
+              match KHashtbl.find_opt table key with
               | Some () -> x
               | None ->
-                KeyHashtbl.add table key ();
+                KHashtbl.add table key ();
                 f x key value
             end
           | None -> f x key value
@@ -122,7 +122,7 @@ module Make (K: HashedType) = struct
         | Some size -> size
         | None -> 16
       in
-      aux (Some (KeyHashtbl.create table_size)) x t
+      aux (Some (KHashtbl.create table_size)) x t
 
   let iter f t = fold (fun () key value -> f key value) () t
 
@@ -189,12 +189,12 @@ module Make (K: HashedType) = struct
       let i = key_bucket key ht in
       let rec find_in_bucket = function
         | Empty -> raise Not_found
-        | Cons { key = k; data = value; next = _ } when Key.equal key k -> value
+        | Cons { key = k; data = value; next = _ } when K.equal key k -> value
         | Cons { key = _; data = _; next = next } -> find_in_bucket next
       in
       find_in_bucket ht.data.(i)
-    | Diff { key = k; data = None; source = _; _ } when Key.equal key k -> raise Not_found
-    | Diff { key = k; data = Some value; source = _; _ } when Key.equal key k -> value
+    | Diff { key = k; data = None; source = _; _ } when K.equal key k -> raise Not_found
+    | Diff { key = k; data = Some value; source = _; _ } when K.equal key k -> value
     | Diff { key = _; data = _; source = src; _ } -> find key src
 
   let rec find_opt key t =
@@ -203,11 +203,11 @@ module Make (K: HashedType) = struct
       let i = key_bucket key ht in
       let rec find_in_bucket = function
         | Empty -> None
-        | Cons { key = k; data = value; next = _; _ } when Key.equal key k -> Some value
+        | Cons { key = k; data = value; next = _; _ } when K.equal key k -> Some value
         | Cons { key = _; data = _; next = next; _ } -> find_in_bucket next
       in
       find_in_bucket ht.data.(i)
-    | Diff { key = k; data = value_opt; source = _; _ } when Key.equal key k -> value_opt
+    | Diff { key = k; data = value_opt; source = _; _ } when K.equal key k -> value_opt
     | Diff { key = _; data = _; source = src; _ } -> find_opt key src
 
   let map f t =

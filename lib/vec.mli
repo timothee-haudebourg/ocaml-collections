@@ -1,7 +1,7 @@
 type 'a t
 
-(** Create a vector with the given capacity *)
 val create : int -> 'a t
+(** Create a vector with the given capacity *)
 
 val of_list : 'a list -> 'a t
 
