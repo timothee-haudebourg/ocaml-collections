@@ -27,3 +27,5 @@ val fold_inline_combinations : ('a t -> 'b -> 'b) -> ('a t) t -> 'b -> 'b
 
 val fold_bool_combinations : (bool t -> 'a -> 'a) -> int -> 'a -> 'a
 (** [fold_bool_combinations f n] fold all the combinations of [n] booleans. *)
+
+val print : ('a -> Format.formatter -> unit) -> string -> 'a list -> Format.formatter -> unit

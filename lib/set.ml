@@ -7,11 +7,12 @@ module type S = sig
   val fold_words : int -> (elt list -> 'a -> 'a) -> t -> 'a -> 'a
   val fold_inline_combinations : (elt list -> 'a -> 'a) -> t list -> 'a -> 'a
   val fold_random: (elt -> 'a -> 'a) -> t -> 'a -> 'a
-  (* val update : (elt option -> unit) -> elt -> t -> t *)
+  val update : (elt option -> unit) -> elt -> t -> t
   val fold2 : (elt -> elt -> 'a -> 'a) -> t -> t -> 'a -> 'a
   val iter2 : (elt -> elt -> unit) -> t -> t -> unit
   val product : (elt -> elt -> elt option) -> t -> t -> t
   val hash : t -> int
+  val print : (elt -> Format.formatter -> unit) -> string -> t -> Format.formatter -> unit
 end
 
 module Make (E : OrderedType) = struct
@@ -56,11 +57,17 @@ module Make (E : OrderedType) = struct
     in
     do_fold [] l x
 
+  let update f x t =
+    begin match find_opt x t with
+      | Some v -> f (Some v); t
+      | None -> f None; add x t
+    end
+
   (* let rec update f x = function
-    | Empty ->
+     | Empty ->
       f (None);
       Node{l=Empty; v=x; r=Empty; h=1}
-    | Node{l; v; r; _} as t ->
+     | Node{l; v; r; _} as t ->
       let c = E.compare x v in
       if c = 0 then begin
         f (Some v);
@@ -102,6 +109,17 @@ module Make (E : OrderedType) = struct
     fold2 (eprod) a b empty
 
   let hash t = Hashtbl.hash t
+
+  let print f sep t out =
+    ignore (
+      fold (
+        fun x print_sep ->
+          if print_sep then
+            Format.fprintf out "%s" sep;
+          f x out;
+          true
+      ) t false
+    )
 end
 
 module Ext (A : S) (B : S) = struct

@@ -13,10 +13,10 @@ module type S = sig
 
   val fold_random: (elt -> 'a -> 'a) -> t -> 'a -> 'a
 
-  (* val update : (elt option -> unit) -> elt -> t -> t
+  val update : (elt option -> unit) -> elt -> t -> t
   (** Add an element to the set.
       update f x t.
-      Calls f with Some e if equal e x = 0 and mem e, or with None. *) *)
+      Calls f with Some e if equal e x = 0 and mem e, or with None. *)
 
   val fold2 : (elt -> elt -> 'a -> 'a) -> t -> t -> 'a -> 'a
 
@@ -25,6 +25,8 @@ module type S = sig
   val product : (elt -> elt -> elt option) -> t -> t -> t
 
   val hash : t -> int
+
+	val print : (elt -> Format.formatter -> unit) -> string -> t -> Format.formatter -> unit
 end
 
 module Make (E : OrderedType) : S with type elt = E.t and type t = Stdlib.Set.Make (E).t

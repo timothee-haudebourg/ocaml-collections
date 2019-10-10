@@ -94,3 +94,12 @@ let inner_fold2 g k l1 l2 accu =
     end
   in
   fold l1 l2 [] accu
+
+let rec print f sep l out =
+  match l with
+  | [] ->
+    ()
+  | x::[] ->
+    f x out
+  | x::l ->
+    Format.fprintf out "%t%s%t" (f x) sep (print f sep l)
