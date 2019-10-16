@@ -18,6 +18,10 @@ module type S = sig
       update f x t.
       Calls f with Some e if equal e x = 0 and mem e, or with None. *)
 
+  val search : (elt -> bool) -> t -> elt
+
+  val search_opt : (elt -> bool) -> t -> elt option
+
   val fold2 : (elt -> elt -> 'a -> 'a) -> t -> t -> 'a -> 'a
 
   val iter2 : (elt -> elt -> unit) -> t -> t -> unit

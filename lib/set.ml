@@ -8,6 +8,8 @@ module type S = sig
   val fold_inline_combinations : (elt list -> 'a -> 'a) -> t list -> 'a -> 'a
   val fold_random: (elt -> 'a -> 'a) -> t -> 'a -> 'a
   val update : (elt option -> unit) -> elt -> t -> t
+  val search : (elt -> bool) -> t -> elt
+  val search_opt : (elt -> bool) -> t -> elt option
   val fold2 : (elt -> elt -> 'a -> 'a) -> t -> t -> 'a -> 'a
   val iter2 : (elt -> elt -> unit) -> t -> t -> unit
   val product : (elt -> elt -> elt option) -> t -> t -> t
@@ -79,6 +81,16 @@ module Make (E : OrderedType) = struct
       else
         let rr = update f x r in
         if r == rr then t else bal l v rr *)
+
+  let search f t =
+    let exception Found of elt in
+    try iter (function e -> if f e then raise (Found e)) t; raise Not_found with
+    | Found e -> e
+
+  let search_opt f t =
+    let exception Found of elt in
+    try iter (function e -> if f e then raise (Found e)) t; None with
+    | Found e -> Some e
 
   let fold_random f t x =
     let shuffle (d:E.t list) =
