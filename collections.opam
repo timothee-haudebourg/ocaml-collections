@@ -4,15 +4,11 @@ description:
   "Collections with functional interface, and more functions for the standard collections."
 maintainer: ["Timothée Haudebourg <timothee.haudebourg@irisa.fr>"]
 authors: ["Timothée Haudebourg <timothee.haudebourg@irisa.fr>"]
-homepage: "inria.gitlab.fr"
-doc: "inria.gitlab.fr"
-bug-reports: "inria.gitlab.fr"
+homepage: "https://github.com/timothee-haudebourg/ocaml-collections"
+dev-repo: "https://github.com/timothee-haudebourg/ocaml-collections"
+bug-reports: "https://github.com/timothee-haudebourg/ocaml-collections/issues"
 depends: []
 build: [
-  [
-    "make"
-    "-j"
-    jobs
-  ]
+  [ make "-j" jobs ]
 ]
-dev-repo: "inria.gitlab.fr"
+install: [ make "install" ]
