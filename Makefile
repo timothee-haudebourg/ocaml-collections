@@ -1,5 +1,6 @@
 PACKAGE=collections
-LIB=Collections
+LIB=collections
+MODULE=Collections
 
 # Include configuration variables.
 include Makefile.config
@@ -16,10 +17,11 @@ ML=$(shell $(OCAMLDEP) $(DFLAGS) -sort $(wildcard src/*.ml))
 MLI=$(shell $(OCAMLDEP) $(DFLAGS) -sort $(wildcard src/*.mli))
 CMO=$(ML:.ml=.cmo)
 CMX=$(ML:.ml=.cmx)
+OBJ=$(ML:.ml=.o)
 CMI=$(MLI:.mli=.cmi)
 DEP=.dep
 
-TARGETS=$(LIB).cmi $(LIB).cma $(LIB).cmx $(LIB).cmxa $(LIB).cmxs
+TARGETS=$(LIB).cmi $(LIB).cma $(LIB).cmx $(LIB).cmxa $(LIB).a $(LIB).cmxs
 
 ifdef DEBUG
 	CFLAGS += -g
@@ -47,7 +49,7 @@ $(CMO):%.cmo:%.ml %.cmi
 	$(OCAMLC) $(CFLAGS) -c -o $@ $<
 
 $(CMX):%.cmx:%.ml %.cmi
-	$(OCAMLOPT) $(XFLAGS) -for-pack $(LIB) -c -o $@ $<
+	$(OCAMLOPT) $(XFLAGS) -for-pack $(MODULE) -c -o $@ $<
 
 $(LIB).cmo $(LIB).cmi: %: $(CMO)
 	$(OCAMLC) -pack -o $@ $^
@@ -58,7 +60,7 @@ $(LIB).cmx: %: $(CMX)
 $(LIB).cma: $(LIB).cmo
 	$(OCAMLC) $(LFLAGS) -a -o $@ $<
 
-$(LIB).cmxa: $(LIB).cmx
+$(LIB).cmxa $(LIB).a: $(LIB).cmx
 	$(OCAMLOPT) $(LFLAGS) -a -o $@ $<
 
 $(LIB).cmxs: $(LIB).cmx
@@ -74,12 +76,12 @@ install: $(TARGET) $(LIB).cmi
 	@cat META | sed "s/%LIBRARY%/$(LIB)/g" | sed "s/%VERSION%/$(shell cat VERSION)/g" > $(PREFIX)/lib/$(PACKAGE)/META
 	@cp $(PACKAGE).opam $(PREFIX)/lib/$(PACKAGE)/
 	@cp $(LIB).cmi $(LIB).cma $(PREFIX)/lib/$(PACKAGE)/
-	@cp $(LIB).cmx $(LIB).cmxa $(LIB).cmxs $(PREFIX)/lib/$(PACKAGE)/
+	@cp $(LIB).cmx $(LIB).cmxa $(LIB).cmxs $(LIB).a $(PREFIX)/lib/$(PACKAGE)/
 	@echo "done."
 
 # Clean the repo.
 clean:
-	rm -rf $(CMO) $(CMI) $(LIB).a $(LIB).o $(LIB).cmo $(DEP)
+	rm -rf $(CMO) $(CMI) $(CMX) $(OBJ) $(LIB).o $(LIB).cmo $(DEP)
 
 # Clean and remove binairies.
 mrproper: clean
