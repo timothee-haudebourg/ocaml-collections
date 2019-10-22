@@ -19,7 +19,7 @@ CMX=$(ML:.ml=.cmx)
 CMI=$(MLI:.mli=.cmi)
 DEP=.dep
 
-TARGETS=$(LIB).cmi $(LIB).cma $(LIB).cmxa $(LIB).cmxs
+TARGETS=$(LIB).cmi $(LIB).cma $(LIB).cmx $(LIB).cmxa $(LIB).cmxs
 
 ifdef DEBUG
 	CFLAGS += -g
@@ -83,7 +83,7 @@ clean:
 
 # Clean and remove binairies.
 mrproper: clean
-	rm -rf $(TARGETS) $(LIB).cmi
+	rm -rf $(TARGETS)
 
 # Non-file targets.
 .PHONY: all dep doc clean mrproper
