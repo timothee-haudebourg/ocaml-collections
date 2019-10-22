@@ -1,5 +1,5 @@
 PACKAGE=collections
-LIB=collections
+LIB=Collections
 
 # Include configuration variables.
 include Makefile.config
@@ -15,13 +15,11 @@ OFLAGS=$(INCLUDES)
 ML=$(shell $(OCAMLDEP) $(DFLAGS) -sort $(wildcard src/*.ml))
 MLI=$(shell $(OCAMLDEP) $(DFLAGS) -sort $(wildcard src/*.mli))
 CMO=$(ML:.ml=.cmo)
+CMX=$(ML:.ml=.cmx)
 CMI=$(MLI:.mli=.cmi)
 DEP=.dep
 
 TARGETS=$(LIB).cmi $(LIB).cma $(LIB).cmxa $(LIB).cmxs
-
-# Includes the dependencies to build in the right order
--include $(DEP)
 
 ifdef DEBUG
 	CFLAGS += -g
@@ -30,11 +28,14 @@ endif
 
 all: byte native
 
-byte: $(LIB).cmi $(LIB).cma
+byte: $(LIB).cma
 
-native: $(LIB).cmi $(LIB).cmxa $(LIB).cmxs
+native: $(LIB).cmxa $(LIB).cmxs
 
 dep: $(DEP)
+
+# Includes the dependencies to build in the right order
+-include $(DEP)
 
 $(DEP): $(ML) $(MLI)
 	$(OCAMLDEP) $(DFLAGS) $^ > $@
@@ -46,7 +47,7 @@ $(CMO):%.cmo:%.ml %.cmi
 	$(OCAMLC) $(CFLAGS) -c -o $@ $<
 
 $(CMX):%.cmx:%.ml %.cmi
-	$(OCAMLOPT) $(XFLAGS) -c -o $@ $<
+	$(OCAMLOPT) $(XFLAGS) -for-pack $(LIB) -c -o $@ $<
 
 $(LIB).cmo $(LIB).cmi: %: $(CMO)
 	$(OCAMLC) -pack -o $@ $^
@@ -72,16 +73,17 @@ install: $(TARGET) $(LIB).cmi
 	@mkdir -p $(PREFIX)/lib/$(PACKAGE)
 	@cat META | sed "s/%LIBRARY%/$(LIB)/g" | sed "s/%VERSION%/$(shell cat VERSION)/g" > $(PREFIX)/lib/$(PACKAGE)/META
 	@cp $(PACKAGE).opam $(PREFIX)/lib/$(PACKAGE)/
-	@cp $(TARGETS) $(PREFIX)/lib/$(PACKAGE)/
+	@cp $(LIB).cmi $(LIB).cma $(PREFIX)/lib/$(PACKAGE)/
+	@cp $(LIB).cmx $(LIB).cmxa $(LIB).cmxs $(PREFIX)/lib/$(PACKAGE)/
 	@echo "done."
 
 # Clean the repo.
 clean:
-	rm -rf $(CMO) $(CMI) $(LIB).a $(LIB).o $(LIB).cmo $(LIB).cmx $(DEP)
+	rm -rf $(CMO) $(CMI) $(LIB).a $(LIB).o $(LIB).cmo $(DEP)
 
 # Clean and remove binairies.
 mrproper: clean
-	rm -rf $(TARGETS)
+	rm -rf $(TARGETS) $(LIB).cmi
 
 # Non-file targets.
 .PHONY: all dep doc clean mrproper
