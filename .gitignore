@@ -11,3 +11,5 @@ doc
 src/.merlin
 src/*.cmi
 src/*.cmo
+src/*.cmti
+src/*.odoc

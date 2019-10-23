@@ -3,6 +3,6 @@ with import <nixpkgs> {};
 runCommand "dummy" {
 	buildInputs = [
 		ocamlPackages_latest.ocaml
-		ocamlPackages.odoc
+		ocamlPackages_latest.odoc
 	];
 } ""

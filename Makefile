@@ -19,6 +19,11 @@ CMO=$(ML:.ml=.cmo)
 CMX=$(ML:.ml=.cmx)
 OBJ=$(ML:.ml=.o)
 CMI=$(MLI:.mli=.cmi)
+
+CMTI=$(MLI:.mli=.cmti)
+DOC=$(CMTI:.cmti=.odoc)
+HTML=$(subst src/,doc/html/$(PACKAGE)/,$(DOC:.odoc=.html))
+
 DEP=.dep
 
 TARGETS=$(LIB).cmi $(LIB).cma $(LIB).cmx $(LIB).cmxa $(LIB).a $(LIB).cmxs
@@ -51,6 +56,15 @@ $(CMO):%.cmo:%.ml %.cmi
 $(CMX):%.cmx:%.ml %.cmi
 	$(OCAMLOPT) $(XFLAGS) -for-pack $(MODULE) -c -o $@ $<
 
+$(CMTI):%.cmti:%.mli
+	$(OCAMLC) $(CFLAGS) -bin-annot -for-pack $(MODULE) -c -o $@ $<
+
+$(DOC):%.odoc:%.cmti
+	odoc compile --package $(PACKAGE) $<
+
+doc/html/$(PACKAGE)/%.html: src/%.odoc
+	odoc html $(OFLAGS) -o doc/html $<
+
 $(LIB).cmo $(LIB).cmi: %: $(CMO)
 	$(OCAMLC) -pack -o $@ $^
 
@@ -66,9 +80,12 @@ $(LIB).cmxa $(LIB).a: $(LIB).cmx
 $(LIB).cmxs: $(LIB).cmx
 	$(OCAMLOPT) $(LFLAGS) -shared -o $@ $<
 
-doc: $(ML) $(MLI)
+doc: $(DOC)
 	@mkdir -p doc/html
-	ocamldoc -html -d doc/html $(OFLAGS) $^
+	odoc compile --package $(PACKAGE) src/index.mld
+
+html: doc $(HTML)
+	odoc html $(OFLAGS) -o doc/html src/page-index.odoc
 
 install: $(TARGET) $(LIB).cmi
 	@echo "installing to $(PREFIX)/lib/$(PACKAGE)/"
@@ -81,11 +98,11 @@ install: $(TARGET) $(LIB).cmi
 
 # Clean the repo.
 clean:
-	rm -rf $(CMO) $(CMI) $(CMX) $(OBJ) $(LIB).o $(LIB).cmo $(DEP)
+	rm -rf $(CMO) $(CMI) $(CMX) $(OBJ) $(CMTI) $(LIB).o $(LIB).cmo $(DEP)
 
 # Clean and remove binairies.
 mrproper: clean
 	rm -rf $(TARGETS)
 
 # Non-file targets.
-.PHONY: all dep doc clean mrproper
+.PHONY: all dep doc html clean mrproper
