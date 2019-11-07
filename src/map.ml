@@ -9,6 +9,7 @@ sig
   val fold2 : (key -> 'a -> key -> 'b -> 'c -> 'c) -> 'a t -> 'b t -> 'c -> 'c
   val product : (key -> 'a -> key -> 'b -> (key * 'c) option) -> 'a t -> 'b t -> 'c t
   val hash : 'a t -> int
+  val fold_combinations : ('b t -> 'c -> 'c) -> 'a t -> (('b -> 'c -> 'c) -> 'a -> 'c -> 'c) -> 'c -> 'c
 end
 
 module Make (K: OrderedType) = struct
@@ -52,6 +53,19 @@ module Make (K: OrderedType) = struct
     fold2 bprod a b empty
 
   let hash t = Hashtbl.hash t
+
+  let fold_combinations f t g accu =
+    let rec fold l map accu =
+      begin match l with
+        | [] -> f map accu
+        | (key, value)::l' ->
+          g (
+            fun value' accu ->
+              fold l' (add key value' map) accu
+          ) value accu
+      end
+    in
+    fold (bindings t) empty accu
 end
 
 module Ext (A : S) (B : S) = struct

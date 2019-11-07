@@ -14,6 +14,8 @@ sig
   val product : (key -> 'a -> key -> 'b -> (key * 'c) option) -> 'a t -> 'b t -> 'c t
 
   val hash : 'a t -> int
+
+  val fold_combinations : ('b t -> 'c -> 'c) -> 'a t -> (('b -> 'c -> 'c) -> 'a -> 'c -> 'c) -> 'c -> 'c
 end
 
 module Make (K : OrderedType) : S with type key = K.t and type +'a t = 'a Stdlib.Map.Make (K).t

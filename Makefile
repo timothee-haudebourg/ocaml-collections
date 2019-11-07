@@ -37,7 +37,7 @@ all: byte native
 
 byte: $(LIB).cma
 
-native: $(LIB).cmxa $(LIB).cmxs
+native: clean $(LIB).cmxa $(LIB).cmxs
 
 dep: $(DEP)
 
