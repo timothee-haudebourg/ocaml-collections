@@ -37,7 +37,7 @@ all: byte native
 
 byte: $(LIB).cma
 
-native: clean $(LIB).cmxa $(LIB).cmxs
+native: partialclean $(LIB).cmxa $(LIB).cmxs
 
 dep: $(DEP)
 
@@ -97,12 +97,16 @@ install: $(TARGET) $(LIB).cmi
 	@echo "done."
 
 # Clean the repo.
-clean:
-	rm -rf $(CMO) $(CMI) $(CMX) $(OBJ) $(CMTI) $(LIB).o $(LIB).cmo $(DEP)
+partialclean:
+	rm -rf $(CMO) $(CMX) $(OBJ) $(CMTI) $(LIB).o $(LIB).cmo $(DEP)
+
+# Clean the repo.
+clean: partialclean
+	rm -rf $(CMI)
 
 # Clean and remove binairies.
 mrproper: clean
 	rm -rf $(TARGETS)
 
 # Non-file targets.
-.PHONY: all dep doc html clean mrproper
+.PHONY: all dep doc html partialclean clean mrproper
