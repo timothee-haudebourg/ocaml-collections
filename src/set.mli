@@ -3,7 +3,9 @@ module type OrderedType = Stdlib.Set.OrderedType
 module type S = sig
   include Stdlib.Set.S
 
-	val fold_pairs: ?reflexive:bool -> (elt -> elt -> 'a -> 'a) -> t -> 'a -> 'a
+  val fold_pairs: ?reflexive:bool -> (elt -> elt -> 'a -> 'a) -> t -> 'a -> 'a
+
+  val fold_pairs2: ?reflexive:bool -> (elt -> elt -> 'a -> 'a) -> t -> t -> 'a -> 'a
 
   val fold_words : int -> (elt list -> 'a -> 'a) -> t -> 'a -> 'a
   (** [fold_words n f x t] fold all words of size [n] where [t] is the alphabet.
@@ -30,7 +32,7 @@ module type S = sig
 
   val hash : t -> int
 
-	val print : (elt -> Format.formatter -> unit) -> string -> t -> Format.formatter -> unit
+  val print : (elt -> Format.formatter -> unit) -> string -> t -> Format.formatter -> unit
 end
 
 module Make (E : OrderedType) : S with type elt = E.t and type t = Stdlib.Set.Make (E).t

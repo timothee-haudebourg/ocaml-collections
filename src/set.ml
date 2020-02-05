@@ -4,6 +4,7 @@ module type S = sig
   include Stdlib.Set.S
 
   val fold_pairs: ?reflexive:bool -> (elt -> elt -> 'a -> 'a) -> t -> 'a -> 'a
+  val fold_pairs2: ?reflexive:bool -> (elt -> elt -> 'a -> 'a) -> t -> t -> 'a -> 'a
   val fold_words : int -> (elt list -> 'a -> 'a) -> t -> 'a -> 'a
   val fold_inline_combinations : (elt list -> 'a -> 'a) -> t list -> 'a -> 'a
   val fold_random: (elt -> 'a -> 'a) -> t -> 'a -> 'a
@@ -31,6 +32,21 @@ module Make (E : OrderedType) = struct
               then raise (Continue (if reflexive then f e e' accu else accu))
               else f e e' accu
           ) s accu
+        with
+        | Continue accu -> accu
+    ) s accu
+
+  let fold_pairs2 (type accu) ?(reflexive=false) f s s' accu =
+    let exception Continue of accu in
+    fold (
+      fun e accu ->
+        try
+          fold (
+            fun e' accu ->
+              if E.compare e e' = 0
+              then raise (Continue (if reflexive then f e e' accu else accu))
+              else f e e' accu
+          ) s' accu
         with
         | Continue accu -> accu
     ) s accu
