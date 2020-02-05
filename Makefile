@@ -66,7 +66,7 @@ doc/html/$(PACKAGE)/%.html: src/%.odoc
 	odoc html $(OFLAGS) -o doc/html $<
 
 $(LIB).cmo $(LIB).cmi: %: $(CMO)
-	$(OCAMLC) -pack -o $@ $^
+	$(OCAMLC) $(CFLAGS) -pack -o $@ $^
 
 $(LIB).cmx: %: $(CMX)
 	$(OCAMLOPT) -pack -o $@ $^
