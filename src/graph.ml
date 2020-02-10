@@ -34,38 +34,55 @@ module Make (Node : HashTable.HashedType) = struct
 
   type t = {
     nodes: NodeSet.t;
-    succ: NodeSet.t NodeTable.t
+    connections: (NodeSet.t * NodeSet.t) NodeTable.t
   }
 
   let empty =
     {
       nodes = NodeSet.empty;
-      succ = NodeTable.create 8
+      connections = NodeTable.create 8
     }
 
   let nodes t =
     t.nodes
 
   let successors t node =
-    match NodeTable.find_opt node t.succ with
-    | Some succs -> succs
+    match NodeTable.find_opt node t.connections with
+    | Some (_, succs) -> succs
+    | None -> NodeSet.empty
+
+  let predecessors t node =
+    match NodeTable.find_opt node t.connections with
+    | Some (preds, _) -> preds
     | None -> NodeSet.empty
 
   let fold (f : node -> node -> 'a -> 'a) (t : t) (x : 'a) : 'a =
     NodeTable.fold (
-      fun x node succs ->
+      fun x node (_, succs) ->
         NodeSet.fold (fun node' (x : 'a) -> f node node' x) succs x
-    ) x t.succ
+    ) x t.connections
 
   let add node t =
     { t with nodes = NodeSet.add node t.nodes }
 
   let connect a b t =
     let t = add b (add a t) in
-    { t with succ = NodeTable.set a (NodeSet.add b (successors t a)) t.succ }
+    let connections = NodeTable.set a (predecessors t a, NodeSet.add b (successors t a)) t.connections in
+    let connections = NodeTable.set b (NodeSet.add a (predecessors t b), successors t b)   connections in
+    { t with connections = connections }
 
   let scheduling t =
-    []
+    let table = Hashtbl.create (NodeSet.cardinal t.nodes) in
+    let rec add node scheduling : node list =
+      match Hashtbl.find_opt table node with
+      | Some () -> scheduling
+      | None ->
+        Hashtbl.add table node ();
+        let preds : NodeSet.t = predecessors t node in
+        let scheduling = NodeSet.fold add preds scheduling in
+        node::scheduling
+    in
+    List.rev (NodeSet.fold add t.nodes [])
 
   type node_component_data = {
     mutable index: int;
