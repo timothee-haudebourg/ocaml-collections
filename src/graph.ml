@@ -1,4 +1,4 @@
-module type S = sig
+module type BASE = sig
   type node
 
   module NodeSet : Set.S with type elt = node
@@ -9,13 +9,21 @@ module type S = sig
 
   val nodes : t -> NodeSet.t
 
-	val successors : t -> node -> NodeSet.t
+  val successors : t -> node -> NodeSet.t
+
+  val fold : (node -> node -> 'a -> 'a) -> t -> 'a -> 'a
 
   val add : node -> t -> t
 
-	val connect : node -> node -> t -> t
+  val connect : node -> node -> t -> t
 
-  val components : t -> NodeSet.t list
+  val scheduling : t -> node list
+end
+
+module type S = sig
+  include BASE
+
+  val components_graph : t -> (module BASE with type node = NodeSet.t and type t = 'a) -> 'a
 end
 
 module Make (Node : HashTable.HashedType) = struct
@@ -43,6 +51,12 @@ module Make (Node : HashTable.HashedType) = struct
     | Some succs -> succs
     | None -> NodeSet.empty
 
+  let fold (f : node -> node -> 'a -> 'a) (t : t) (x : 'a) : 'a =
+    NodeTable.fold (
+      fun x node succs ->
+        NodeSet.fold (fun node' (x : 'a) -> f node node' x) succs x
+    ) x t.succ
+
   let add node t =
     { t with nodes = NodeSet.add node t.nodes }
 
@@ -50,16 +64,22 @@ module Make (Node : HashTable.HashedType) = struct
     let t = add b (add a t) in
     { t with succ = NodeTable.set a (NodeSet.add b (successors t a)) t.succ }
 
+  let scheduling t =
+    []
+
   type node_component_data = {
     mutable index: int;
     mutable low_link: int;
     mutable on_stack: bool
   }
 
-  let components t =
+  let components_graph (type cgraph) t (module ComponentsGraph : BASE with type node = NodeSet.t and type t = cgraph) : cgraph =
     let table = Hashtbl.create (NodeSet.cardinal t.nodes) in
     let stack = Stack.create () in
-    let components = ref [] in
+    let cgraph : ComponentsGraph.t ref = ref ComponentsGraph.empty in
+    let component_table = Hashtbl.create 8 in
+    let set_component node c = Hashtbl.add component_table node c in
+    let component_of node = Hashtbl.find component_table node in
     let count = ref 0 in
     let next_index () =
       let index = !count in
@@ -95,10 +115,19 @@ module Make (Node : HashTable.HashedType) = struct
             if Node.equal node member then component else build_component component
           in
           let component = build_component NodeSet.empty in
-          components := component :: !components
+          NodeSet.iter (
+            function node -> set_component node component
+          ) component;
+          cgraph := ComponentsGraph.add component !cgraph
         end;
         node_data
     in
     NodeSet.iter (function node -> ignore (strong_connect node)) t.nodes;
-    !components
+    fold (
+      fun node node' (cgraph : ComponentsGraph.t) ->
+        let c = component_of node in
+        let c' = component_of node' in
+        if NodeSet.equal c c' then cgraph else
+          ComponentsGraph.connect c c' cgraph
+    ) t (!cgraph : ComponentsGraph.t)
 end
