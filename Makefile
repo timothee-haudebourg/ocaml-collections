@@ -1,32 +1,32 @@
-PACKAGE=collections
-LIB=collections
-MODULE=Collections
+PACKAGE:=collections
+LIB:=collections
+MODULE:=Collections
 
 # Include configuration variables.
 include Makefile.config
 
-INCLUDES=-I src
+INCLUDES:=-I src
 
-DFLAGS=$(INCLUDES)
-CFLAGS=$(INCLUDES)
-XFLAGS=$(INCLUDES)
-LFLAGS=
-OFLAGS=$(INCLUDES)
+DFLAGS:=$(INCLUDES)
+CFLAGS:=$(INCLUDES)
+XFLAGS:=$(INCLUDES)
+LFLAGS:=
+OFLAGS:=$(INCLUDES)
 
-ML=$(shell $(OCAMLDEP) $(DFLAGS) -sort $(wildcard src/*.ml))
-MLI=$(shell $(OCAMLDEP) $(DFLAGS) -sort $(wildcard src/*.mli))
-CMO=$(ML:.ml=.cmo)
-CMX=$(ML:.ml=.cmx)
-OBJ=$(ML:.ml=.o)
-CMI=$(MLI:.mli=.cmi)
+ML:=$(shell $(OCAMLDEP) $(DFLAGS) -sort $(wildcard src/*.ml))
+MLI:=$(shell $(OCAMLDEP) $(DFLAGS) -sort $(wildcard src/*.mli))
+CMO:=$(ML:.ml=.cmo)
+CMX:=$(ML:.ml=.cmx)
+OBJ:=$(ML:.ml=.o)
+CMI:=$(MLI:.mli=.cmi)
 
-CMTI=$(MLI:.mli=.cmti)
-DOC=$(CMTI:.cmti=.odoc)
-HTML=$(subst src/,doc/html/$(PACKAGE)/,$(DOC:.odoc=.html))
+CMTI:=$(MLI:.mli=.cmti)
+DOC:=$(CMTI:.cmti=.odoc)
+HTML:=$(subst src/,doc/html/$(PACKAGE)/,$(DOC:.odoc=.html))
 
-DEP=.dep
+DEP:=.dep
 
-TARGETS=$(LIB).cmi $(LIB).cma $(LIB).cmx $(LIB).cmxa $(LIB).a $(LIB).cmxs
+TARGETS:=$(LIB).cmi $(LIB).cma $(LIB).cmx $(LIB).cmxa $(LIB).a $(LIB).cmxs
 
 ifdef DEBUG
 	CFLAGS += -g
